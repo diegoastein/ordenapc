@@ -18,7 +18,7 @@ static class Autostart
     {
         using var key = Registry.CurrentUser.CreateSubKey(RunKey);
         if (enabled)
-            key.SetValue(ValueName, $"\"{exePath ?? Application.ExecutablePath}\"");
+            key.SetValue(ValueName, $"\"{exePath ?? Application.ExecutablePath}\" --autostart");
         else
             key.DeleteValue(ValueName, throwOnMissingValue: false);
     }

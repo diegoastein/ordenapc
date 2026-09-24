@@ -81,6 +81,7 @@ sealed class LogForm : Form
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
         }
+        if (!_app.RequirePin(this, "deshacer un movimiento")) return;
         var answer = MessageBox.Show(this,
             $"¿Devolver \"{Path.GetFileName(entry.Destino)}\" a\n{Path.GetDirectoryName(entry.Origen)}?\n\n" +
             "Ese archivo no se va a volver a mover automáticamente.",
@@ -91,6 +92,7 @@ sealed class LogForm : Form
         if (r.Estado == MoveStatus.Deshecho)
         {
             _app.SaveConfig(); // guarda la lista de excluidos
+            _app.Mailboxes.RefreshCounts();
             MessageBox.Show(this, "Listo, el archivo volvió a su carpeta original.", "OrdenaPC",
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
         }

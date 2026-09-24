@@ -58,6 +58,10 @@ public class AppConfigTests
         Assert.NotNull(c.Excluidos);
         Assert.Equal(30, c.IntervaloBarridoMin);
         Assert.NotNull(Assert.Single(c.Reglas).Extensiones);
+        Assert.NotNull(c.Buzones);
+        Assert.NotNull(c.Limpiezas);
+        Assert.Equal(3, c.AlertaHoras);
+        Assert.False(c.TienePin);
     }
 
     [Fact]

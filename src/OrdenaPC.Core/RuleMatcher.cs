@@ -20,12 +20,15 @@ public static class RuleMatcher
             !string.IsNullOrWhiteSpace(k) && name.IndexOf(TextUtil.Normalize(k.Trim()), StringComparison.Ordinal) >= 0);
     }
 
-    public static bool IsInOrigin(Rule rule, string filePath)
+    public static bool IsInOrigin(Rule rule, string filePath) => IsInFolder(rule.CarpetaOrigen, filePath);
+
+    /// <summary>El archivo está directamente en esa carpeta (no en una subcarpeta).</summary>
+    public static bool IsInFolder(string folder, string filePath)
     {
-        var origin = TextUtil.TryNormalizeFolder(rule.CarpetaOrigen);
+        var normalized = TextUtil.TryNormalizeFolder(folder);
         var dir = Path.GetDirectoryName(Path.GetFullPath(filePath));
-        return origin.Length > 0 && dir != null
-            && string.Equals(TextUtil.NormalizeFolder(dir), origin, StringComparison.OrdinalIgnoreCase);
+        return normalized.Length > 0 && dir != null
+            && string.Equals(TextUtil.NormalizeFolder(dir), normalized, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>Primera regla (en el orden de la tabla) que aplica al archivo, o null.</summary>

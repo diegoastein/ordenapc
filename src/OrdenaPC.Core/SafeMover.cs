@@ -14,7 +14,9 @@ public sealed class SafeMover
     /// <summary>Para tests: usa copiar-verificar-borrar aunque origen y destino estén en el mismo disco.</summary>
     public bool ForceCopyMode { get; set; }
 
-    public MoveResult Move(string source, string destDir, string ruleName, bool simulate, string? targetName = null)
+    /// <param name="keepSource">true = copiar sin quitar el original (por ejemplo, desde un pendrive).</param>
+    public MoveResult Move(string source, string destDir, string ruleName, bool simulate, string? targetName = null,
+        bool keepSource = false)
     {
         var now = _now();
         MoveResult Result(string dest, MoveStatus status, string detail = "") =>
@@ -62,13 +64,13 @@ public sealed class SafeMover
 
         try
         {
-            if (!ForceCopyMode && SameVolume(source, dir))
+            if (!keepSource && !ForceCopyMode && SameVolume(source, dir))
             {
                 File.Move(source, target);
             }
             else
             {
-                var error = CopyVerifyDelete(source, target);
+                var error = CopyVerifyDelete(source, target, deleteSource: !keepSource);
                 if (error != null) return Result(target, MoveStatus.Error, error);
             }
         }
@@ -80,7 +82,7 @@ public sealed class SafeMover
     }
 
     /// <summary>Devuelve null si salió bien, o el motivo si hubo que revertir.</summary>
-    private static string? CopyVerifyDelete(string source, string target)
+    private static string? CopyVerifyDelete(string source, string target, bool deleteSource)
     {
         var tmp = target + ".ordenapc-tmp";
         try
@@ -96,6 +98,7 @@ public sealed class SafeMover
             throw;
         }
 
+        if (!deleteSource) return null;
         try
         {
             File.Delete(source);
@@ -107,6 +110,37 @@ public sealed class SafeMover
             return "Se copió pero no se pudo quitar el original; se revirtió la copia: " + ex.Message;
         }
         return null;
+    }
+
+    /// <summary>La carpeta existe, o se puede crear porque existe su carpeta padre.</summary>
+    public static bool IsAvailable(string dir)
+    {
+        try
+        {
+            if (Directory.Exists(dir)) return true;
+            var parent = Path.GetDirectoryName(dir);
+            return parent != null && Directory.Exists(parent);
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>Crea la carpeta solo si existe su carpeta padre. Devuelve si la carpeta existe al final.</summary>
+    public static bool TryEnsureFolder(string dir)
+    {
+        try
+        {
+            if (Directory.Exists(dir)) return true;
+            if (!IsAvailable(dir)) return false;
+            Directory.CreateDirectory(dir);
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
 
     public static bool IsLocked(string path)
