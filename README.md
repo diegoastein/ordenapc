@@ -2,14 +2,14 @@
 
 OrdenaPC es una app para Windows 10 y 11 que ordena archivos sola. Vigila carpetas como Escritorio, Descargas o Documentos y mueve cada archivo que coincide con una regla a su carpeta destino, normalmente una subcarpeta de Google Drive.
 
-- Es un solo `.exe` y no hay que instalar .NET ni nada más. No necesita permisos de administrador.
+- Es un solo `.exe` de unos 70 KB y no hay que instalar nada, porque usa .NET Framework 4.8, que ya viene con Windows 10 y 11. No necesita permisos de administrador.
 - Nunca borra nada, solo mueve. Si en el destino ya hay un archivo con el mismo nombre, le agrega la fecha y la hora (`epicrisis_juanperez_2026-09-24_14-32.docx`).
 - Si el destino no está disponible, por ejemplo con Google Drive desconectado, el archivo queda donde estaba y se reintenta cada 5 minutos.
 - Guarda un log CSV de cada movimiento y permite deshacer un movimiento desde la ventana del log.
 
 ## Descarga
 
-Bajá `OrdenaPC.exe` desde la sección **Releases** del repo, o desde el último build en **Actions**, en el artifact "OrdenaPC".
+Bajá `OrdenaPC.exe` desde la sección **Releases** del repo. Si el navegador bloquea el `.exe`, bajá `OrdenaPC.zip` y descomprimilo.
 
 > Como el `.exe` no está firmado, Windows SmartScreen puede mostrar el aviso "Windows protegió su PC". Para seguir, hacé clic en **Más información** y después en **Ejecutar de todas formas**.
 
@@ -36,8 +36,8 @@ Bajá `OrdenaPC.exe` desde la sección **Releases** del repo, o desde el último
 
 ## Desarrollo
 
-- `src/OrdenaPC.Core`: la lógica, con reglas, movimiento seguro, log y barridos. Es `net8.0` y se puede testear en cualquier sistema.
-- `src/OrdenaPC`: la interfaz WinForms, con bandeja, panel, watcher e instalación. Es `net8.0-windows`.
-- `tests/OrdenaPC.Tests`: los tests con xUnit.
+- `src/OrdenaPC.Core`: la lógica, con reglas, movimiento seguro, log y barridos. Compila para `net48` y `net8.0`.
+- `src/OrdenaPC`: la interfaz WinForms, con bandeja, panel, watcher e instalación. Es `net48` e incluye el código del Core, así que queda un solo `.exe`.
+- `tests/OrdenaPC.Tests`: los tests con xUnit, que corren en `net8.0` y `net48`.
 
 GitHub Actions compila en `windows-latest` con cada push. Para publicar una versión, creá un tag `vX.Y.Z` y subilo.
