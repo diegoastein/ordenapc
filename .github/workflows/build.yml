@@ -20,29 +20,31 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      - name: Tests
+      - name: Tests (.NET 8 y .NET Framework 4.8)
         run: dotnet test tests/OrdenaPC.Tests/OrdenaPC.Tests.csproj -c Release
 
-      - name: Publicar exe
-        run: >
-          dotnet publish src/OrdenaPC/OrdenaPC.csproj -c Release -r win-x64 --self-contained true
-          -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true
-          -p:IncludeNativeLibrariesForSelfExtract=true -o publish
+      - name: Compilar exe
+        run: dotnet build src/OrdenaPC/OrdenaPC.csproj -c Release -o build
 
-      - name: Verificar que sea un solo archivo
+      - name: Preparar descarga
         shell: pwsh
         run: |
-          Get-ChildItem publish | Format-Table Name, Length
-          $files = @(Get-ChildItem publish -File)
-          if ($files.Count -ne 1 -or $files[0].Name -ne 'OrdenaPC.exe') { throw "Se esperaba solo OrdenaPC.exe" }
+          Get-ChildItem build | Format-Table Name, Length
+          New-Item -ItemType Directory dist | Out-Null
+          Copy-Item build/OrdenaPC.exe dist/
+          Compress-Archive dist/OrdenaPC.exe dist/OrdenaPC.zip
+          Get-ChildItem dist | Format-Table Name, Length
+          if ((Get-Item dist/OrdenaPC.exe).Length -gt 2MB) { throw "El exe pesa más de lo esperado" }
 
       - uses: actions/upload-artifact@v4
         with:
           name: OrdenaPC
-          path: publish/OrdenaPC.exe
+          path: dist/OrdenaPC.exe
 
       - name: Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: publish/OrdenaPC.exe
+          files: |
+            dist/OrdenaPC.exe
+            dist/OrdenaPC.zip

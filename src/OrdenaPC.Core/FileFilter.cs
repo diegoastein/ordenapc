@@ -12,7 +12,7 @@ public static class FileFilter
     public static bool ShouldIgnore(string path)
     {
         var name = Path.GetFileName(path);
-        if (name.StartsWith("~$") || name.StartsWith('.')) return true;
+        if (name.StartsWith("~$") || name.StartsWith(".")) return true;
         if (IgnoredExtensions.Contains(Path.GetExtension(name))) return true;
         try
         {

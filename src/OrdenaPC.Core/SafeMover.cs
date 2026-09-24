@@ -64,7 +64,7 @@ public sealed class SafeMover
         {
             if (!ForceCopyMode && SameVolume(source, dir))
             {
-                File.Move(source, target, overwrite: false);
+                File.Move(source, target);
             }
             else
             {
@@ -88,7 +88,7 @@ public sealed class SafeMover
             File.Copy(source, tmp, overwrite: true);
             if (new FileInfo(source).Length != new FileInfo(tmp).Length)
                 throw new IOException("La copia no coincide en tamaño con el original.");
-            File.Move(tmp, target, overwrite: false);
+            File.Move(tmp, target);
         }
         catch
         {

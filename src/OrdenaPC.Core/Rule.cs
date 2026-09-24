@@ -1,4 +1,4 @@
-using System.Text.Json.Serialization;
+using System.Runtime.Serialization;
 
 namespace OrdenaPC.Core;
 
@@ -12,7 +12,7 @@ public sealed class Rule
     public string CarpetaDestino { get; set; } = "";
     public bool Activa { get; set; } = true;
 
-    [JsonIgnore]
+    [IgnoreDataMember]
     public string NombreVisible => string.IsNullOrWhiteSpace(Nombre)
         ? $"{string.Join(",", PalabrasClave)} {string.Join(",", Extensiones)}".Trim()
         : Nombre;

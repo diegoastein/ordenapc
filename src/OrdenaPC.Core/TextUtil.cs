@@ -21,7 +21,9 @@ public static class TextUtil
     /// <summary>Separa "a, b; c" en una lista sin vacíos ni repetidos.</summary>
     public static List<string> SplitList(string? text) =>
         (text ?? "")
-            .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => s.Trim())
+            .Where(s => s.Length > 0)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
@@ -29,8 +31,8 @@ public static class TextUtil
     public static string NormalizeExtension(string ext)
     {
         var e = ext.Trim().ToLowerInvariant();
-        if (e.StartsWith('*')) e = e[1..];
-        return e.StartsWith('.') ? e : "." + e;
+        if (e.StartsWith("*")) e = e.Substring(1);
+        return e.StartsWith(".") ? e : "." + e;
     }
 
     /// <summary>Ruta absoluta, con variables de entorno expandidas y sin barra final.</summary>
@@ -38,7 +40,9 @@ public static class TextUtil
     {
         var expanded = Environment.ExpandEnvironmentVariables(path.Trim());
         if (expanded.Length == 0) return "";
-        return Path.TrimEndingDirectorySeparator(Path.GetFullPath(expanded));
+        var full = Path.GetFullPath(expanded);
+        var root = Path.GetPathRoot(full) ?? "";
+        return full.Length > root.Length ? full.TrimEnd('\\', '/') : full;
     }
 
     /// <summary>Igual que NormalizeFolder pero devuelve "" si la ruta es inválida.</summary>

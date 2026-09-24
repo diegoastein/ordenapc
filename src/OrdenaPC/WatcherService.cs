@@ -94,7 +94,8 @@ sealed class WatcherService : IDisposable
             foreach (var entry in _queue)
             {
                 if (now - entry.Value < Debounce) continue;
-                if (!_queue.TryRemove(entry)) continue;
+                // Solo se saca si no llegó un evento nuevo mientras tanto (compara también la fecha).
+                if (!((ICollection<KeyValuePair<string, DateTime>>)_queue).Remove(entry)) continue;
                 var r = _organizer.ProcessFile(entry.Key);
                 if (r != null) results.Add(r);
             }

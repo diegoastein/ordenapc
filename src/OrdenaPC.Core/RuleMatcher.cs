@@ -17,7 +17,7 @@ public static class RuleMatcher
 
         var name = TextUtil.Normalize(Path.GetFileNameWithoutExtension(filePath));
         return rule.PalabrasClave.Any(k =>
-            !string.IsNullOrWhiteSpace(k) && name.Contains(TextUtil.Normalize(k.Trim()), StringComparison.Ordinal));
+            !string.IsNullOrWhiteSpace(k) && name.IndexOf(TextUtil.Normalize(k.Trim()), StringComparison.Ordinal) >= 0);
     }
 
     public static bool IsInOrigin(Rule rule, string filePath)

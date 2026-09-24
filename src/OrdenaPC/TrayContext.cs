@@ -87,7 +87,7 @@ sealed class TrayContext : ApplicationContext
     {
         _tray.Icon = IsActive ? _iconOn : _iconOff;
         var text = "OrdenaPC · " + StatusText;
-        _tray.Text = text.Length > 63 ? text[..63] : text;
+        _tray.Text = text.Length > 63 ? text.Substring(0, 63) : text;
         StateChanged?.Invoke();
     }
 

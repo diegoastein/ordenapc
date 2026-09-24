@@ -101,7 +101,7 @@ sealed class RuleEditForm : Form
         var b = new Button { Text = "Examinar…", AutoSize = true };
         b.Click += (_, _) =>
         {
-            using var dialog = new FolderBrowserDialog { Description = description, UseDescriptionForTitle = true, ShowNewFolderButton = true };
+            using var dialog = new FolderBrowserDialog { Description = description, ShowNewFolderButton = true };
             if (Directory.Exists(target.Text)) dialog.SelectedPath = target.Text;
             if (dialog.ShowDialog(this) == DialogResult.OK) target.Text = dialog.SelectedPath;
         };

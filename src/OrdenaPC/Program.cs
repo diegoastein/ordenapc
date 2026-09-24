@@ -5,7 +5,8 @@ static class Program
     [STAThread]
     static void Main()
     {
-        ApplicationConfiguration.Initialize();
+        Application.EnableVisualStyles();
+        Application.SetCompatibleTextRenderingDefault(false);
 
         // Si se instala, se lanza la copia instalada y este proceso termina.
         if (Installer.OfferInstall()) return;

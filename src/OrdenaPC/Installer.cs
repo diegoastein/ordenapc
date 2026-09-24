@@ -13,9 +13,8 @@ static class Installer
     /// <summary>Devuelve true si este proceso tiene que terminar (se lanzó la copia instalada o falló la copia).</summary>
     public static bool OfferInstall()
     {
-        var current = Environment.ProcessPath;
-        if (current == null ||
-            string.Equals(Path.GetFullPath(current), Path.GetFullPath(InstalledExe), StringComparison.OrdinalIgnoreCase))
+        var current = Application.ExecutablePath;
+        if (string.Equals(Path.GetFullPath(current), Path.GetFullPath(InstalledExe), StringComparison.OrdinalIgnoreCase))
             return false;
 
         var message = File.Exists(InstalledExe)

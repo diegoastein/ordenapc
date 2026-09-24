@@ -9,7 +9,7 @@ namespace OrdenaPC.Core;
 /// </summary>
 public sealed class MoveLog
 {
-    private const char Sep = ';';
+    private const string Sep = ";";
     private const string DateFormat = "yyyy-MM-dd HH:mm:ss";
     private static readonly string Header = string.Join(Sep, "Fecha", "Regla", "Origen", "Destino", "Estado", "Detalle");
     private readonly object _lock = new();
@@ -61,7 +61,7 @@ public sealed class MoveLog
     private static string Quote(string s)
     {
         s = s.Replace("\r", " ").Replace("\n", " ");
-        return s.IndexOfAny(new[] { Sep, '"' }) >= 0 ? "\"" + s.Replace("\"", "\"\"") + "\"" : s;
+        return s.IndexOfAny(new[] { ';', '"' }) >= 0 ? "\"" + s.Replace("\"", "\"\"") + "\"" : s;
     }
 
     private static List<string> ParseLine(string line)
@@ -79,7 +79,7 @@ public sealed class MoveLog
                 else sb.Append(c);
             }
             else if (c == '"') quoted = true;
-            else if (c == Sep) { fields.Add(sb.ToString()); sb.Clear(); }
+            else if (c == ';') { fields.Add(sb.ToString()); sb.Clear(); }
             else sb.Append(c);
         }
         fields.Add(sb.ToString());

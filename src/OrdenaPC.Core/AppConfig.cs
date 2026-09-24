@@ -1,6 +1,6 @@
-using System.Text.Encodings.Web;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Json;
+using System.Text;
 
 namespace OrdenaPC.Core;
 
@@ -23,21 +23,18 @@ public sealed class AppConfig
     public static string DataDir =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "OrdenaPC");
 
-    private static readonly JsonSerializerOptions Json = new()
-    {
-        WriteIndented = true,
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-        Converters = { new JsonStringEnumConverter() },
-    };
+    // DataContractJsonSerializer viene tanto en .NET Framework como en .NET 8, sin paquetes extra.
+    private static DataContractJsonSerializer Serializer() => new(typeof(AppConfig));
 
     public static AppConfig Load(string path)
     {
         if (!File.Exists(path)) return new AppConfig();
         try
         {
-            return JsonSerializer.Deserialize<AppConfig>(File.ReadAllText(path), Json) ?? new AppConfig();
+            using var fs = File.OpenRead(path);
+            return ((AppConfig?)Serializer().ReadObject(fs) ?? new AppConfig()).FillDefaults();
         }
-        catch (JsonException)
+        catch (Exception ex) when (ex is not IOException and not UnauthorizedAccessException)
         {
             // Se guarda el archivo dañado aparte para no perder las reglas y se arranca de cero.
             File.Copy(path, path + ".corrupto", overwrite: true);
@@ -49,7 +46,30 @@ public sealed class AppConfig
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         var tmp = path + ".tmp";
-        File.WriteAllText(tmp, JsonSerializer.Serialize(this, Json));
-        File.Move(tmp, path, overwrite: true);
+        using (var fs = File.Create(tmp))
+        using (var writer = JsonReaderWriterFactory.CreateJsonWriter(fs, Encoding.UTF8, ownsStream: false, indent: true))
+        {
+            Serializer().WriteObject(writer, this);
+            writer.Flush();
+        }
+        if (File.Exists(path)) File.Replace(tmp, path, null);
+        else File.Move(tmp, path);
+    }
+
+    // El deserializador no ejecuta constructores: lo que falte en el JSON queda en null.
+    private AppConfig FillDefaults()
+    {
+        Reglas ??= new();
+        Excluidos ??= new();
+        if (IntervaloBarridoMin <= 0) IntervaloBarridoMin = 30;
+        foreach (var r in Reglas)
+        {
+            r.Nombre ??= "";
+            r.CarpetaOrigen ??= "";
+            r.CarpetaDestino ??= "";
+            r.Extensiones ??= new();
+            r.PalabrasClave ??= new();
+        }
+        return this;
     }
 }

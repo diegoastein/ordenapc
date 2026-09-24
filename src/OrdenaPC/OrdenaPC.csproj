@@ -1,14 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    .NET Framework 4.8 viene con Windows 10/11: el .exe no necesita instalar nada y pesa < 1 MB.
+    El código del Core se compila adentro del .exe para que quede un solo archivo.
+  -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
-    <UseWindowsForms>true</UseWindowsForms>
+    <TargetFramework>net48</TargetFramework>
     <AssemblyName>OrdenaPC</AssemblyName>
     <RootNamespace>OrdenaPC</RootNamespace>
-    <Version>0.1.0</Version>
-    <ApplicationHighDpiMode>SystemAware</ApplicationHighDpiMode>
+    <Version>0.2.0</Version>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\OrdenaPC.Core\OrdenaPC.Core.csproj" />
+    <Compile Include="..\OrdenaPC.Core\**\*.cs" Exclude="..\OrdenaPC.Core\bin\**;..\OrdenaPC.Core\obj\**" Link="Core\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Drawing" />
   </ItemGroup>
 </Project>
