@@ -10,6 +10,8 @@ public enum MoveStatus
     EnUso,
     Error,
     Deshecho,
+    /// <summary>Se modificó hace menos del tiempo de espera; se mueve cuando se cumpla.</summary>
+    Esperando,
 }
 
 public sealed record MoveResult(

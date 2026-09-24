@@ -5,10 +5,12 @@ namespace OrdenaPC;
 sealed class MainForm : Form
 {
     private static readonly int[] Intervals = { 15, 30, 60, 120 };
+    private static readonly int[] Waits = { 0, 1, 5, 10, 30, 60 };
 
     private readonly TrayContext _app;
     private readonly DataGridView _grid = new();
     private readonly ComboBox _interval = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 90 };
+    private readonly ComboBox _wait = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 90 };
     private readonly ComboBox _notifications = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 260 };
     private readonly CheckBox _autostart = new() { Text = "Iniciar con Windows", AutoSize = true, Margin = new Padding(16, 6, 3, 3) };
     private readonly Label _status = new() { AutoSize = true, Margin = new Padding(3, 6, 3, 6) };
@@ -127,6 +129,12 @@ sealed class MainForm : Form
         panel.Controls.Add(new Label { Text = "Barrido de respaldo cada", AutoSize = true, Margin = new Padding(3, 7, 3, 3) });
         _interval.Items.AddRange(Intervals.Select(i => (object)$"{i} min").ToArray());
         panel.Controls.Add(_interval);
+        panel.Controls.Add(new Label { Text = "Esperar antes de mover:", AutoSize = true, Margin = new Padding(16, 7, 3, 3) });
+        _wait.Items.AddRange(Waits.Select(w => (object)(w == 0 ? "Sin espera" : $"{w} min")).ToArray());
+        panel.Controls.Add(_wait);
+        new ToolTip().SetToolTip(_wait,
+            "Un archivo se mueve recién cuando pasa este tiempo sin modificarse.\n" +
+            "Sirve para poder seguir corrigiendo un documento recién guardado.");
         panel.Controls.Add(new Label { Text = "Notificaciones:", AutoSize = true, Margin = new Padding(16, 7, 3, 3) });
         _notifications.Items.AddRange(new object[] { "Nunca", "Por cada archivo movido", "Resumen al terminar cada barrido" });
         panel.Controls.Add(_notifications);
@@ -139,6 +147,12 @@ sealed class MainForm : Form
         {
             if (_loading) return;
             _app.Config.IntervaloBarridoMin = Intervals[_interval.SelectedIndex];
+            _app.SaveConfig();
+        };
+        _wait.SelectedIndexChanged += (_, _) =>
+        {
+            if (_loading || _wait.SelectedIndex >= Waits.Length) return;
+            _app.Config.EsperaMinutos = Waits[_wait.SelectedIndex];
             _app.SaveConfig();
         };
         _notifications.SelectedIndexChanged += (_, _) =>
@@ -161,6 +175,14 @@ sealed class MainForm : Form
         _loading = true;
         var idx = Array.IndexOf(Intervals, _app.Config.IntervaloBarridoMin);
         _interval.SelectedIndex = idx >= 0 ? idx : 1;
+        var waitIdx = Array.IndexOf(Waits, _app.Config.EsperaMinutos);
+        if (waitIdx < 0)
+        {
+            // Un valor que no está en la lista (editado a mano) se agrega para no perderlo.
+            _wait.Items.Add($"{_app.Config.EsperaMinutos} min");
+            waitIdx = _wait.Items.Count - 1;
+        }
+        _wait.SelectedIndex = waitIdx;
         _notifications.SelectedIndex = (int)_app.Config.Notificaciones;
         _autostart.Checked = Autostart.IsEnabled();
         _loading = false;

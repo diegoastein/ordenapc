@@ -14,6 +14,7 @@ public class AppConfigTests
             IntervaloBarridoMin = 60,
             Notificaciones = NotificationMode.CadaArchivo,
             PrimerBarridoHecho = true,
+            EsperaMinutos = 10,
             Excluidos = { @"C:\x\epicrisis.docx" },
         };
         config.Reglas.Add(new Rule
@@ -33,6 +34,7 @@ public class AppConfigTests
         Assert.Equal(60, back.IntervaloBarridoMin);
         Assert.Equal(NotificationMode.CadaArchivo, back.Notificaciones);
         Assert.True(back.PrimerBarridoHecho);
+        Assert.Equal(10, back.EsperaMinutos);
         Assert.Equal(config.Excluidos, back.Excluidos);
         var r = Assert.Single(back.Reglas);
         Assert.Equal(config.Reglas[0].Id, r.Id);

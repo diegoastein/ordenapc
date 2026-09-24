@@ -15,6 +15,7 @@ sealed class WatcherService : IDisposable
     private readonly Organizer _organizer;
     private readonly Func<AppConfig> _config;
     private readonly List<FileSystemWatcher> _watchers = new();
+    // Archivo -> momento (UTC) a partir del cual se procesa.
     private readonly ConcurrentDictionary<string, DateTime> _queue = new(StringComparer.OrdinalIgnoreCase);
     private System.Threading.Timer? _flushTimer, _sweepTimer, _retryTimer;
     private int _flushing, _sweeping;
@@ -81,9 +82,12 @@ sealed class WatcherService : IDisposable
 
     public void Dispose() => Stop();
 
-    private void Enqueue(string path) => _queue[path] = DateTime.UtcNow;
+    // Cada evento nuevo corre el momento: así se espera a que el archivo deje de recibir eventos.
+    private void Enqueue(string path) => _queue[path] = DateTime.UtcNow + Debounce;
 
-    // Espera a que el archivo deje de recibir eventos (Debounce) antes de procesarlo.
+    /// <summary>Agenda un archivo para procesarlo en un momento dado (lo usa la espera antes de mover).</summary>
+    public void Schedule(string path, DateTime dueUtc) => _queue[path] = dueUtc;
+
     private void Flush()
     {
         if (Interlocked.Exchange(ref _flushing, 1) == 1) return;
@@ -93,7 +97,7 @@ sealed class WatcherService : IDisposable
             var results = new List<MoveResult>();
             foreach (var entry in _queue)
             {
-                if (now - entry.Value < Debounce) continue;
+                if (entry.Value > now) continue;
                 // Solo se saca si no llegó un evento nuevo mientras tanto (compara también la fecha).
                 if (!((ICollection<KeyValuePair<string, DateTime>>)_queue).Remove(entry)) continue;
                 var r = _organizer.ProcessFile(entry.Key);

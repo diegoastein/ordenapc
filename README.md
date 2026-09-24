@@ -18,6 +18,8 @@ Bajá `OrdenaPC.exe` desde la sección **Releases** del repo. Si el navegador bl
 - **Reglas.** Cada regla tiene carpeta origen, extensiones, palabras clave, carpeta destino y un interruptor para activarla. Un archivo coincide cuando su extensión está en la lista y su nombre contiene alguna de las palabras clave, sin distinguir mayúsculas ni acentos. Si coincide con varias reglas, se aplica la primera de la tabla. Los archivos que no coinciden con ninguna no se tocan.
 - **Qué archivos mira.** Solo los que están directamente en la carpeta origen, no los de subcarpetas. Ignora temporales (`~$…`, `.tmp`, `.crdownload`), archivos ocultos y accesos directos.
 - **Cuándo actúa.** Mueve en tiempo real cuando aparece un archivo. Además hace un barrido de respaldo cada 15, 30, 60 o 120 minutos, configurable.
+- **Espera antes de mover.** Un archivo se mueve recién cuando pasó un tiempo sin modificarse (5 minutos por defecto; se puede poner entre "Sin espera" y 60 minutos). Así podés seguir corrigiendo un documento que acabás de guardar.
+- **Deshacer.** Desde el ícono de la bandeja, "Deshacer: archivo" devuelve el último archivo movido a su carpeta original. Desde la ventana del log se puede deshacer cualquier movimiento. Un archivo devuelto no se vuelve a mover solo.
 - **Primer barrido.** Hasta que revises la simulación de "qué movería", la vigilancia automática no mueve nada. También podés activarla sin simular.
 - **Datos.** La configuración y el log están en `%APPDATA%\OrdenaPC\` (`config.json` y `log.csv`). El log se abre en Excel.
 - **Instalación.** Al abrir el `.exe` por primera vez, ofrece copiarse a `%LOCALAPPDATA%\OrdenaPC\` y arrancar con Windows, usando la clave `HKCU\...\Run`.

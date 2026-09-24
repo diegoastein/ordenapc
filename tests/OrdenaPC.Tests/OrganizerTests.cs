@@ -9,7 +9,7 @@ public class OrganizerTests
         public TempDir T { get; } = new();
         public string Desk { get; }
         public string Drive { get; }
-        public AppConfig Config { get; } = new();
+        public AppConfig Config { get; } = new() { EsperaMinutos = 0 };
         public MoveLog Log { get; }
         public Organizer Org { get; }
 

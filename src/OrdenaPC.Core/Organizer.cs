@@ -69,6 +69,20 @@ public sealed class Organizer
                 return null;
             }
 
+            var readyAt = ReadyAtUtc(path);
+            if (readyAt != null)
+            {
+                if (simulate)
+                {
+                    var sim = _mover.Move(path, rule.CarpetaDestino, rule.NombreVisible, simulate: true);
+                    if (sim.Estado != MoveStatus.Simulado) return sim;
+                    var note = $"Se moverá cuando pasen {_config().EsperaMinutos} min sin cambios.";
+                    return sim with { Detalle = sim.Detalle.Length > 0 ? sim.Detalle + " " + note : note };
+                }
+                return new MoveResult(DateTime.Now, rule.NombreVisible, path, "", MoveStatus.Esperando,
+                    $"Se mueve a las {readyAt.Value.ToLocalTime():HH:mm}.");
+            }
+
             var result = _mover.Move(path, rule.CarpetaDestino, rule.NombreVisible, simulate);
             if (simulate) return result;
 
@@ -89,6 +103,38 @@ public sealed class Organizer
             }
             return result;
         }
+    }
+
+    /// <summary>
+    /// Si el archivo se creó o modificó hace menos de EsperaMinutos, devuelve cuándo se puede mover (UTC).
+    /// Si ya se puede mover, o no hay espera configurada, devuelve null.
+    /// </summary>
+    public DateTime? ReadyAtUtc(string path)
+    {
+        var wait = _config().EsperaMinutos;
+        if (wait <= 0) return null;
+        try
+        {
+            var info = new FileInfo(path);
+            // Un archivo copiado conserva la fecha de modificación original, pero la de creación es nueva.
+            var last = info.LastWriteTimeUtc > info.CreationTimeUtc ? info.LastWriteTimeUtc : info.CreationTimeUtc;
+            var ready = last.AddMinutes(wait);
+            return ready > DateTime.UtcNow ? ready : null;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>El movimiento más reciente cuyo archivo sigue en el destino (el que se puede deshacer).</summary>
+    public static MoveResult? LastUndoable(IReadOnlyList<MoveResult> log)
+    {
+        for (int i = log.Count - 1; i >= 0; i--)
+        {
+            if (log[i].Estado == MoveStatus.Movido && File.Exists(log[i].Destino)) return log[i];
+        }
+        return null;
     }
 
     public IReadOnlyList<MoveResult> RetryPending() =>

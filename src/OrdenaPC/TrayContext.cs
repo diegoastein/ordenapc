@@ -9,6 +9,8 @@ sealed class TrayContext : ApplicationContext
     private readonly WatcherService _watcher;
     private readonly NotifyIcon _tray;
     private readonly ToolStripMenuItem _pauseItem;
+    private readonly ToolStripMenuItem _undoItem;
+    private MoveResult? _undoable;
     private readonly Control _ui = new();
     private readonly Icon _iconOn = TrayIcons.Make(Color.FromArgb(0, 120, 212));
     private readonly Icon _iconOff = TrayIcons.Make(Color.Gray);
@@ -31,7 +33,10 @@ sealed class TrayContext : ApplicationContext
         menu.Items.Add("Ejecutar ahora", null, async (_, _) => await RunNowAsync(null));
         _pauseItem = new ToolStripMenuItem("Pausar", null, (_, _) => TogglePause());
         menu.Items.Add(_pauseItem);
+        _undoItem = new ToolStripMenuItem("Deshacer último movimiento", null, (_, _) => UndoLast());
+        menu.Items.Add(_undoItem);
         menu.Items.Add("Ver log", null, (_, _) => ShowLog());
+        menu.Opening += (_, _) => RefreshUndoItem();
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Salir", null, (_, _) => ExitApp());
 
@@ -142,6 +147,13 @@ sealed class TrayContext : ApplicationContext
 
     private void OnProcessed(IReadOnlyList<MoveResult> results, bool sweep)
     {
+        // Los recién modificados se agendan para cuando se cumpla la espera, sin depender del barrido periódico.
+        foreach (var r in results.Where(r => r.Estado == MoveStatus.Esperando))
+        {
+            var readyAt = Organizer.ReadyAtUtc(r.Origen);
+            if (readyAt != null) _watcher.Schedule(r.Origen, readyAt.Value.AddSeconds(1));
+        }
+
         var moved = results.Where(r => r.Estado == MoveStatus.Movido).ToList();
         var pending = results.Count(r => r.Estado == MoveStatus.Pendiente);
 
@@ -180,13 +192,54 @@ sealed class TrayContext : ApplicationContext
         int pending = results.Count(r => r.Estado == MoveStatus.Pendiente);
         int inUse = results.Count(r => r.Estado == MoveStatus.EnUso);
         int errors = results.Count(r => r.Estado == MoveStatus.Error);
+        int waiting = results.Count(r => r.Estado == MoveStatus.Esperando);
 
         var lines = new List<string> { moved == 1 ? "1 archivo ordenado." : $"{moved} archivos ordenados." };
         if (pending > 0) lines.Add($"{pending} esperando a que el destino esté disponible (se reintenta solo).");
+        if (waiting > 0) lines.Add($"{waiting} modificados hace poco: se mueven solos cuando se cumpla el tiempo de espera.");
         if (inUse > 0) lines.Add($"{inUse} abiertos en otro programa (se reintenta en el próximo barrido).");
         if (errors > 0) lines.Add($"{errors} con error (ver el log).");
         MessageBox.Show(owner, string.Join("\n", lines), "OrdenaPC", MessageBoxButtons.OK,
             errors > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
+    }
+
+    private void RefreshUndoItem()
+    {
+        try { _undoable = Organizer.LastUndoable(Log.ReadAll()); }
+        catch (Exception) { _undoable = null; }
+
+        _undoItem.Enabled = _undoable != null;
+        if (_undoable == null)
+        {
+            _undoItem.Text = "Deshacer último movimiento";
+            return;
+        }
+        var name = Path.GetFileName(_undoable.Destino);
+        if (name.Length > 40) name = name.Substring(0, 37) + "...";
+        _undoItem.Text = $"Deshacer: {name}";
+    }
+
+    private void UndoLast()
+    {
+        var entry = _undoable;
+        if (entry == null) return;
+        var name = Path.GetFileName(entry.Destino);
+        var originDir = Path.GetDirectoryName(entry.Origen) ?? "";
+        var answer = MessageBox.Show($"¿Devolver \"{name}\" a\n{originDir}?\n\nEse archivo no se va a volver a mover automáticamente.",
+            "OrdenaPC — Deshacer", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+        if (answer != DialogResult.Yes) return;
+
+        var r = Organizer.Undo(entry);
+        if (r.Estado == MoveStatus.Deshecho)
+        {
+            SaveConfig(); // guarda la lista de excluidos
+            Balloon("Movimiento deshecho", $"{Path.GetFileName(r.Destino)} volvió a {Path.GetFileName(originDir)}");
+        }
+        else
+        {
+            MessageBox.Show("No se pudo deshacer: " + r.Detalle, "OrdenaPC", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+        _logForm?.Reload();
     }
 
     public void ShowMain()

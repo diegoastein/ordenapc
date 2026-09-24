@@ -17,6 +17,9 @@ public sealed class AppConfig
 
     public bool Pausado { get; set; }
 
+    /// <summary>Minutos que un archivo tiene que estar sin modificarse antes de moverlo (0 = sin espera).</summary>
+    public int EsperaMinutos { get; set; } = 5;
+
     /// <summary>Archivos devueltos con "Deshacer": no se vuelven a mover solos.</summary>
     public List<string> Excluidos { get; set; } = new();
 
@@ -62,6 +65,7 @@ public sealed class AppConfig
         Reglas ??= new();
         Excluidos ??= new();
         if (IntervaloBarridoMin <= 0) IntervaloBarridoMin = 30;
+        if (EsperaMinutos < 0) EsperaMinutos = 0;
         foreach (var r in Reglas)
         {
             r.Nombre ??= "";
